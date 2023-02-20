@@ -1,4 +1,4 @@
 # Projects
-Various Projects that don't need separate repositories
+Repository for various projects
 
 See each project's folder for details.
