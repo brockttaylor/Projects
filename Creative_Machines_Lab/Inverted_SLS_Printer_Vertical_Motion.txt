@@ -1,0 +1,87 @@
+//Inverse SLS Prototype Code - load cell and vertical axis.
+
+// Include the AccelStepper library:
+#include <AccelStepper.h>
+#include <ezButton.h>
+#include "HX711.h"
+
+// Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver:
+#define dirPin 2
+#define stepPin 3
+#define motorInterfaceType 1
+#define scale_constant 1
+
+// HX711 circuit wiring
+const int LOADCELL_SCK_PIN = 5;
+const int LOADCELL_DOUT_PIN = 4;
+
+const int MAX_SCALE_VAL = 1000;
+long reading;
+bool goingUp;
+int controlSpeed;
+int startVal = 0;
+int prevStartVal;
+int startPin = 10;
+int limitSwitch = 6;
+bool isRunning;
+
+HX711 scale;
+
+// Create a new instance of the AccelStepper class:
+AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
+
+void setup() {
+  pinMode(startPin, INPUT);
+  pinMode(limitSwitch, INPUT);
+  Serial.begin(57600);
+  goingUp = false;
+  isRunning = true;
+  // Set the maximum speed in steps per second:
+  stepper.setMaxSpeed(200);
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+  scale.set_scale(224.659); //calibration factor. 224659 native units per kilogram. 224.659 native units per gram
+  scale.tare();
+  reading = 0;
+}
+
+void loop() {
+//  Serial.println(digitalRead(limitSwitch));
+//  Serial.print(isRunning);
+  prevStartVal = startVal;
+  startVal = digitalRead(startPin);
+  if(prevStartVal != startVal) {
+    isRunning = true;
+  }
+     
+   //in downward config, run down until scale reaches MAX_SCALE_VAL
+   //in upward config, run up until limit switch is reached
+  if (scale.is_ready()) {
+    reading = scale.get_units();
+    Serial.print("Y: "); Serial.print(reading); Serial.print("  ");
+    Serial.print("Z: "); Serial.print(MAX_SCALE_VAL); Serial.print("  ");
+    Serial.println("uT");
+  }
+   
+  if(abs(reading) > MAX_SCALE_VAL){
+    goingUp = true;
+    isRunning = false;
+    reading = 0;
+  }
+  if(digitalRead(limitSwitch)){
+    goingUp = false;
+    isRunning = false;
+  }
+  if(isRunning) {
+    if(goingUp){
+       controlSpeed = 30;
+    }
+    else{
+       controlSpeed = -30;
+    }
+  }
+  else {
+    controlSpeed = 0;
+  }
+  stepper.setSpeed(controlSpeed);
+  stepper.runSpeed();
+}
