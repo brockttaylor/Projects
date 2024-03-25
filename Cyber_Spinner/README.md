@@ -5,5 +5,6 @@ For this project, we were to design a toy to be used to teach children basic add
 The design focused on allowing kids to create equations that they could solve. 
 
 
-For more information, read Report.pdf
+For more information, read Report.pdf.
+
 The final drawing packet is under Final_Drawing.pdf
